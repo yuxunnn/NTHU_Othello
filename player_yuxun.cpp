@@ -31,17 +31,17 @@ int state_value(State Board){
 
     int corner = 10;
     // Upper left
-    if (Board[0][0] == 1) value += corner;
-    if (Board[0][0] == 2) value -= corner;
+    if (Board[0][0] == player) value += corner;
+    if (Board[0][0] == 3 - player) value -= corner;
     // Upper right
-    if (Board[0][SIZE-1] == 1) value += corner;
-    if (Board[0][SIZE-1] == 2) value -= corner;
+    if (Board[0][SIZE-1] == player) value += corner;
+    if (Board[0][SIZE-1] == 3 - player) value -= corner;
     // Lower left
-    if (Board[SIZE-1][0] == 1) value += corner;
-    if (Board[SIZE-1][0] == 2) value -= corner;
+    if (Board[SIZE-1][0] == player) value += corner;
+    if (Board[SIZE-1][0] == 3 - player) value -= corner;
     // Lower right
-    if (Board[SIZE-1][SIZE-1] == 1) value += corner;
-    if (Board[SIZE-1][SIZE-1] == 2) value -= corner;
+    if (Board[SIZE-1][SIZE-1] == player) value += corner;
+    if (Board[SIZE-1][SIZE-1] == 3 - player) value -= corner;
 
     return value;
 }
@@ -59,7 +59,7 @@ State flip_board(const State Board, const int x, const int y){
         while(1){
             currX += dx[i], currY += dy[i];
             if (currX < 0 || currX >= SIZE || currY < 0 || currY >= SIZE) break;
-            if (ss[currX][currY] == 2){
+            if (ss[currX][currY] == player){
                 targetX = currX;
                 targetY = currY;
             } else if (ss[currX][currY] == 0) break;
@@ -67,7 +67,7 @@ State flip_board(const State Board, const int x, const int y){
         currX = x, currY = y;
         while(currX != targetX && currY != targetY){
             currX += dx[i], currY += dy[i];
-            ss[currX][currY] = 2;
+            ss[currX][currY] = player;
         }
     }    
     return ss;
@@ -93,7 +93,7 @@ void read_valid_spots(std::ifstream& fin) {
 }
 
 void write_valid_spot(std::ofstream& fout) {
-    // int n_valid_spots = next_valid_spots.size();
+    int n_valid_spots = next_valid_spots.size();
 
     // srand(time(NULL));
     // // Choose random spot. (Not random uniform here)
@@ -102,18 +102,15 @@ void write_valid_spot(std::ofstream& fout) {
 
     int maxVal;
     Point p;
-    for (auto it = next_valid_spots.begin(); it != next_valid_spots.end(); it++){
-        State ss = flip_board(board, it->x, it->y);
-        int value = state_value(ss); 
-        if (it == next_valid_spots.begin()){
+    for (int i = 0; i < n_valid_spots; i++){
+        State ss = flip_board(board, next_valid_spots[i].x, next_valid_spots[i].y);
+        int value = state_value(ss);
+        if (i == 0 || value < maxVal){
             maxVal = value;
-            p = *it;
-        }else if (value > maxVal){
-            maxVal = value;
-            p = *it;
+            p.x = next_valid_spots[i].x, p.y = next_valid_spots[i].y;
         }
     }
-    
+
     // Remember to flush the output to ensure the last action is written to file.
     fout << p.x << " " << p.y << std::endl;
     fout.flush();
