@@ -15,6 +15,37 @@ const int SIZE = 8;
 std::array<std::array<int, SIZE>, SIZE> board;
 std::vector<Point> next_valid_spots;
 
+using State = std::array<std::array<int, SIZE>, SIZE>;
+
+// Calculate state value
+int state_value(State Board){
+    
+    int value = 0;
+
+    for (int i = 0; i < SIZE; i++){
+        for (int j = 0; j < SIZE; j++){
+            if (Board[i][j] == 1) value += 1; // black
+            if (Board[i][j] == 2) value -= 1; // white
+        }
+    }
+
+    int corner = 10;
+    // Upper left
+    if (Board[0][0] == 1) value += corner;
+    if (Board[0][0] == 2) value -= corner;
+    // Upper right
+    if (Board[0][SIZE-1] == 1) value += corner;
+    if (Board[0][SIZE-1] == 2) value -= corner;
+    // Lower left
+    if (Board[SIZE-1][0] == 1) value += corner;
+    if (Board[SIZE-1][0] == 2) value -= corner;
+    // Lower right
+    if (Board[SIZE-1][SIZE-1] == 1) value += corner;
+    if (Board[SIZE-1][SIZE-1] == 2) value -= corner;
+
+    return value;
+}
+
 void read_board(std::ifstream& fin) {
     fin >> player;
     for (int i = 0; i < SIZE; i++) {
@@ -41,6 +72,9 @@ void write_valid_spot(std::ofstream& fout) {
     // Choose random spot. (Not random uniform here)
     int index = (rand() % n_valid_spots);
     Point p = next_valid_spots[index];
+
+    // int currVal = state_value(board);
+    
     
     // Remember to flush the output to ensure the last action is written to file.
     fout << p.x << " " << p.y << std::endl;
