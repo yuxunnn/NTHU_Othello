@@ -15,7 +15,7 @@ const int SIZE = 8;
 std::array<std::array<int, SIZE>, SIZE> board;
 std::vector<Point> next_valid_spots;
 
-
+using State = std::vector<std::vector<int>>;
 
 void read_board(std::ifstream& fin) {
     fin >> player;
@@ -43,7 +43,6 @@ void write_valid_spot(std::ofstream& fout) {
     // Choose random spot. (Not random uniform here)
     int index = (rand() % n_valid_spots);
     Point p = next_valid_spots[index];
-
 
 
     
