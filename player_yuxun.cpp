@@ -14,6 +14,9 @@ const int SIZE = 8;
 std::array<std::array<int, SIZE>, SIZE> board;
 std::vector<Point> next_valid_spots;
 
+const int corner = 10;
+const int INFINITE = SIZE * SIZE + 4 * corner + 1;
+
 // Define State
 using State = std::array<std::array<int, SIZE>, SIZE>;
 
@@ -29,7 +32,6 @@ int state_value(State Board){
         }
     }
 
-    int corner = 10;
     // Upper left
     if (Board[0][0] == player) value += corner;
     if (Board[0][0] == 3 - player) value -= corner;
@@ -93,6 +95,7 @@ void read_valid_spots(std::ifstream& fin) {
 }
 
 void write_valid_spot(std::ofstream& fout) {
+    
     int n_valid_spots = next_valid_spots.size();
 
     // srand(time(NULL));
@@ -105,7 +108,7 @@ void write_valid_spot(std::ofstream& fout) {
     for (int i = 0; i < n_valid_spots; i++){
         State ss = flip_board(board, next_valid_spots[i].x, next_valid_spots[i].y);
         int value = state_value(ss);
-        if (i == 0 || value < maxVal){
+        if (i == 0 || value > maxVal){
             maxVal = value;
             p.x = next_valid_spots[i].x, p.y = next_valid_spots[i].y;
         }
