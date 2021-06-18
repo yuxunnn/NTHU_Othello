@@ -9,7 +9,6 @@ struct Point {
     int x, y;
 };
 
-
 int player;
 const int SIZE = 8;
 std::array<std::array<int, SIZE>, SIZE> board;
@@ -47,6 +46,33 @@ int state_value(State Board){
     return value;
 }
 
+// Flip the board
+std::vector<int> dx = {-1, -1, -1, 0, 0, 1, 1, 1};
+std::vector<int> dy = {-1, 0, 1, -1, 1, -1, 0, 1};
+State flip_board(const State Board, const int x, const int y){
+    State ss = Board;
+    int targetX, targetY;
+    int currX, currY;
+    for (int i = 0; i < 8; i++){
+        targetX = x, targetY = y; 
+        currX = x, currY = y;
+        while(1){
+            currX += dx[i], currY += dy[i];
+            if (currX < 0 || currX >= SIZE || currY < 0 || currY >= SIZE) break;
+            if (ss[currX][currY] == 2){
+                targetX = currX;
+                targetY = currY;
+            } else if (ss[currX][currY] == 0) break;
+        }
+        currX = x, currY = y;
+        while(currX != targetX && currY != targetY){
+            currX += dx[i], currY += dy[i];
+            ss[currX][currY] = 2;
+        }
+    }    
+    return ss;
+}
+
 void read_board(std::ifstream& fin) {
     fin >> player;
     for (int i = 0; i < SIZE; i++) {
@@ -67,15 +93,26 @@ void read_valid_spots(std::ifstream& fin) {
 }
 
 void write_valid_spot(std::ofstream& fout) {
-    int n_valid_spots = next_valid_spots.size();
+    // int n_valid_spots = next_valid_spots.size();
 
-    srand(time(NULL));
-    // Choose random spot. (Not random uniform here)
-    int index = (rand() % n_valid_spots);
-    Point p = next_valid_spots[index];
+    // srand(time(NULL));
+    // // Choose random spot. (Not random uniform here)
+    // int index = (rand() % n_valid_spots);
+    // Point p = next_valid_spots[index];
 
-    // int currVal = state_value(board);
-    
+    int maxVal;
+    Point p;
+    for (auto it = next_valid_spots.begin(); it != next_valid_spots.end(); it++){
+        State ss = flip_board(board, it->x, it->y);
+        int value = state_value(ss); 
+        if (it == next_valid_spots.begin()){
+            maxVal = value;
+            p = *it;
+        }else if (value > maxVal){
+            maxVal = value;
+            p = *it;
+        }
+    }
     
     // Remember to flush the output to ensure the last action is written to file.
     fout << p.x << " " << p.y << std::endl;
