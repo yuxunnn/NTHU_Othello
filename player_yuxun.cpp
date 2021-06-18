@@ -15,6 +15,7 @@ const int SIZE = 8;
 std::array<std::array<int, SIZE>, SIZE> board;
 std::vector<Point> next_valid_spots;
 
+// Define State
 using State = std::array<std::array<int, SIZE>, SIZE>;
 
 // Calculate state value
