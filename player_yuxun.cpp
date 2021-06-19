@@ -27,6 +27,7 @@ struct Point {
 
 int player;
 const int SIZE = 8;
+int count = 0;
 std::vector<Point> next_valid_spots;
 using State = std::array<std::array<int, SIZE>, SIZE>;
 State board;
@@ -39,20 +40,22 @@ const std::array<Point, 8> directions{{
 struct Node{
     State _s;
     int value;
+    int disc_num;
+    Point pos;
+    Point best_choice;
     std::set<Node*> child;
     std::vector<Point> valid_spots;
 };
 
 bool is_spot_on_board(Point p);
 bool is_disc_at(State s, Point p, int disc);
-int state_value(State Board);
+int state_value(Node *curr);
 std::vector<Point> get_valid_spots(State s, int curr_player);
-Node* make_node(State s);
+Node* make_node(State s, Point dir);
 void build_tree(Node *curr, int curr_player);
 bool is_spot_valid(State s, Point center, int curr_player);
 State flip_board(State parent, Point center, int curr_player);
 int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer);
-
 
 bool is_spot_on_board(Point p){
     return 0 <= p.x && p.x < SIZE && 0 <= p.y && p.y < SIZE;
@@ -63,18 +66,24 @@ bool is_disc_at(State s, Point p, int disc) {
     return true;
 }
 // Calculate state value
-int state_value(State Board){
+
+int state_value(Node *curr){
     
+    State Board = curr->_s;
+
     int value = 0;
+    curr->disc_num =0;
 
     for (int i = 0; i < SIZE; i++){
         for (int j = 0; j < SIZE; j++){
             if (Board[i][j] == player) value += 1;
             if (Board[i][j] == 3 - player) value -= 1;
+            if (Board[i][j] == player || Board[i][j] == 3 - player) curr->disc_num++;
         }
     }
 
-    const int corner = 10;
+    // Corner
+    const int corner = 1000;
     // Upper left
     if (Board[0][0] == player) value += corner;
     if (Board[0][0] == 3 - player) value -= corner;
@@ -88,6 +97,50 @@ int state_value(State Board){
     if (Board[SIZE-1][SIZE-1] == player) value += corner;
     if (Board[SIZE-1][SIZE-1] == 3 - player) value -= corner;
 
+    // Position around corner
+    const int aroundCorner = -20;
+    // Upper left
+    if (Board[0][1] == player) value += aroundCorner;
+    if (Board[0][1] == 3 - player) value -= aroundCorner;
+    if (Board[1][0] == player) value += aroundCorner;
+    if (Board[1][0] == 3 - player) value -= aroundCorner;
+    if (Board[1][1] == player) value += aroundCorner;
+    if (Board[1][1] == 3 - player) value -= aroundCorner;
+    // Upper right
+    if (Board[0][SIZE-2] == player) value += aroundCorner;
+    if (Board[0][SIZE-2] == 3 - player) value -= aroundCorner;
+    if (Board[1][SIZE-1] == player) value += aroundCorner;
+    if (Board[1][SIZE-1] == 3 - player) value -= aroundCorner;
+    if (Board[1][SIZE-2] == player) value += aroundCorner;
+    if (Board[1][SIZE-2] == 3 - player) value -= aroundCorner;
+    // Lower left
+    if (Board[SIZE-2][0] == player) value += aroundCorner;
+    if (Board[SIZE-2][0] == 3 - player) value -= aroundCorner;
+    if (Board[SIZE-1][1] == player) value += aroundCorner;
+    if (Board[SIZE-1][1] == 3 - player) value -= aroundCorner;
+    if (Board[SIZE-2][1] == player) value += aroundCorner;
+    if (Board[SIZE-2][1] == 3 - player) value -= aroundCorner;
+    // Lower right
+    if (Board[SIZE-1][SIZE-2] == player) value += aroundCorner;
+    if (Board[SIZE-1][SIZE-2] == 3 - player) value -= aroundCorner;
+    if (Board[SIZE-2][SIZE-1] == player) value += aroundCorner;
+    if (Board[SIZE-2][SIZE-1] == 3 - player) value -= aroundCorner;
+    if (Board[SIZE-2][SIZE-2] == player) value += aroundCorner;
+    if (Board[SIZE-2][SIZE-2] == 3 - player) value -= aroundCorner;
+
+    // Edge
+    const int edge = 10;
+    for (int i = 2; i < SIZE - 2; i++){
+        if (Board[i][0] == player) value += edge;
+        if (Board[i][0] == 3 - player) value += edge;
+        if (Board[i][SIZE-1] == player) value += edge;
+        if (Board[i][SIZE-1] == 3 - player) value += edge;
+        if (Board[0][i] == player) value += edge;
+        if (Board[0][i] == 3 - player) value += edge;
+        if (Board[SIZE-1][i] == player) value += edge;
+        if (Board[SIZE-1][i] == 3 - player) value += edge;
+    }
+
     return value;
 }
 
@@ -95,8 +148,8 @@ std::vector<Point> get_valid_spots(State s, int curr_player) {
     std::vector<Point> valid_spots;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
-            Point p = Point(i, j);
             if (s[i][j] != 0) continue;
+            Point p = Point(i, j);
             if (is_spot_valid(s, p, curr_player)) valid_spots.push_back(p);
         }
     }
@@ -104,27 +157,17 @@ std::vector<Point> get_valid_spots(State s, int curr_player) {
 }
 
 
-Node* make_node(State s){
-    Node *temp = new Node();
+Node* make_node(State s, Point dir){
+    Node *temp = new Node[1];
     temp->_s = s;
-    temp->value = state_value(s);
+    temp->pos = dir;
+    temp->value = state_value(temp);
     return temp;
 }
-void build_tree(Node *curr, int curr_player){
-    
-    curr->valid_spots = get_valid_spots(curr->_s, curr_player);
-    
-    for (auto i : curr->valid_spots){
-        curr->child.insert(make_node(flip_board(curr->_s, i, curr_player)));
 
-    }
-
-    for(auto i : curr->child){
-        build_tree(i, 3 - curr_player);
-    }
-}
 bool is_spot_valid(State s, Point center, int curr_player) {
     if (s[center.x][center.y] != 0) return false;
+
     for (Point dir: directions) {
         // Move along the direction while testing.
         Point p = center + dir;
@@ -167,20 +210,28 @@ State flip_board(State parent, Point center, int curr_player) {
 // Alpha-Beta pruning
 int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer){
 
-    if (depth == 0 || curr->child.empty()) return curr->value;
+    if(curr->disc_num == SIZE * SIZE) return curr->value;
+
+    // Find curr_childs
+    if (maximizingPlayer) curr->valid_spots = get_valid_spots(curr->_s, player);
+    else curr->valid_spots = get_valid_spots(curr->_s, 3 - player);
 
     if (maximizingPlayer){
         int value = INT32_MIN;
-        for (auto child : curr->child){
+        for (auto i : curr->valid_spots){
+            Node *child = make_node(flip_board(curr->_s, i, player), i);
             value = std::max(value, alpha_beta(child, depth - 1, alpha, beta, false));
+            if (value > alpha) curr->best_choice = child->pos;
             alpha = std::max(alpha, value);
             if (alpha >= beta) break;
         }
         return value;
     }else { // minimizingPlayer
         int value = INT32_MAX;
-        for (auto child : curr->child){
+        for (auto i : curr->valid_spots){
+            Node *child = make_node(flip_board(curr->_s, i, player), i);
             value = std::min(value, alpha_beta(child, depth - 1, alpha, beta, true));
+            if (value < beta) curr->best_choice = child->pos;
             beta = std::min(beta, value);
             if (beta <= alpha) break;
         }
@@ -217,23 +268,10 @@ void write_valid_spot(std::ofstream& fout) {
     // int index = (rand() % n_valid_spots);
     // Point p = next_valid_spots[index];
 
-    Node *root = make_node(board);
-    build_tree(root, player);
+    Node *root = make_node(board, Point(0, 0));
+    alpha_beta(root, 0, INT32_MIN, INT32_MAX, true);
     
-    int maxChild, count = 0, id;
-    Point p;
-    for (auto it = root->child.begin(); it != root->child.end(); it++){
-        int value = alpha_beta(*it, 64, INT32_MIN, INT32_MAX, 3 - player);
-        if (it == root->child.begin() || value > maxChild){
-            maxChild = value;
-            id = count;
-        }
-        count++;
-    }
-    auto it = root->valid_spots.begin();
-    while(id--) it++;
-    p = *it;
-
+    Point p = root->best_choice;
     // Remember to flush the output to ensure the last action is written to file.
     fout << p.x << " " << p.y << std::endl;
     fout.flush();
