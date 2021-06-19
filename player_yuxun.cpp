@@ -27,7 +27,7 @@ struct Point {
 // Variable declaration
 
 const int SIZE = 8;
-const int MaxDepth = 10;
+const int MaxDepth = 8;
 using State = std::array<std::array<int, SIZE>, SIZE>;
 int player;
 int disc_on_board = 0;
