@@ -306,7 +306,7 @@ void write_valid_spot(std::ofstream& fout) {
     // Point p = next_valid_spots[index];
 
     Node *root = make_node(board, Point(0, 0), disc_on_board);
-    alpha_beta(root, 2, INT32_MIN, INT32_MAX, true);
+    alpha_beta(root, 10, INT32_MIN, INT32_MAX, true);
     
     // Remember to flush the output to ensure the last action is written to file.
     fout << root->best_choice.x << " " << root->best_choice.y << std::endl;
