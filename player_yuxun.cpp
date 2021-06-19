@@ -5,30 +5,32 @@
 #include <cstdlib>
 #include <ctime>
 #include <set>
-// Declare
+
 struct Point {
     int x, y;
     Point() : Point(0, 0) {}
-	Point(int x, int y) : x(x), y(y) {}
-	bool operator==(const Point& rhs) const {
+    Point(int x, int y) : x(x), y(y) {};
+	bool operator==(const Point& rhs) {
 		return x == rhs.x && y == rhs.y;
-	}
-	bool operator!=(const Point& rhs) const {
+	};
+	bool operator!=(const Point& rhs) {
 		return !operator==(rhs);
-	}
-	Point operator+(const Point& rhs) const {
+	};
+	Point operator+(const Point& rhs) {
 		return Point(x + rhs.x, y + rhs.y);
-	}
-	Point operator-(const Point& rhs) const {
+	};
+	Point operator-(const Point& rhs) {
 		return Point(x - rhs.x, y - rhs.y);
-	}
+	};
 };
 
-int player;
+// Variable declaration
+
 const int SIZE = 8;
+using State = std::array<std::array<int, SIZE>, SIZE>;
+int player;
 int disc_on_board = 0;
 std::vector<Point> next_valid_spots;
-using State = std::array<std::array<int, SIZE>, SIZE>;
 State board;
 
 const std::array<Point, 8> directions{{
@@ -36,6 +38,7 @@ const std::array<Point, 8> directions{{
     Point(0, -1), /*{0, 0}, */Point(0, 1),
     Point(1, -1), Point(1, 0), Point(1, 1)
 }};
+
 struct Node{
     State _s;
     int value;
@@ -46,25 +49,73 @@ struct Node{
     std::vector<Point> valid_spots;
 };
 
+// =====================================================================================================
+
+// Check if spot on board
 bool is_spot_on_board(Point p);
+// Check if the position has the right disc
 bool is_disc_at(State s, Point p, int disc);
-int state_value(Node *curr);
-std::vector<Point> get_valid_spots(State s, int curr_player);
-Node* make_node(State s, Point dir, int disc_num);
-void build_tree(Node *curr, int curr_player);
+// Check if we can put the next disc
 bool is_spot_valid(State s, Point center, int curr_player);
+// Get valid spots
+std::vector<Point> get_valid_spots(State s, int curr_player);
+// Make new node
+Node* make_node(State s, Point dir, int disc_num);
+// Calculate the board value
+int state_value(Node *curr);
+// Flip the board to the next state
 State flip_board(State parent, Point center, int curr_player);
+// Alpha-Beta pruning
 int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer);
+
+// ======================================================================================================
 
 bool is_spot_on_board(Point p){
     return 0 <= p.x && p.x < SIZE && 0 <= p.y && p.y < SIZE;
 }
+
 bool is_disc_at(State s, Point p, int disc) {
     if (!is_spot_on_board(p)) return false;
     if (s[p.x][p.y] != disc) return false;
     return true;
 }
-// Calculate state value
+
+bool is_spot_valid(State s, Point center, int curr_player) {
+    if (s[center.x][center.y] != 0) return false;
+
+    for (Point dir: directions) {
+        // Move along the direction while testing.
+        Point p = center + dir;
+        if (!is_disc_at(s, p, 3 - curr_player)) continue;
+        p = p + dir;
+        while (is_spot_on_board(p) && s[p.x][p.y] != 0) {
+            if (is_disc_at(s, p, curr_player)) return true;
+            p = p + dir;
+        }
+    }
+    return false;
+}
+
+std::vector<Point> get_valid_spots(State s, int curr_player) {
+    std::vector<Point> valid_spots;
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (s[i][j] != 0) continue;
+            Point p = Point(i, j);
+            if (is_spot_valid(s, p, curr_player)) valid_spots.push_back(p);
+        }
+    }
+    return valid_spots;
+}
+
+Node* make_node(State s, Point dir, int disc_num){
+    Node *temp = new Node[1];
+    temp->_s = s;
+    temp->pos = dir;
+    temp->value = state_value(temp);
+    temp->disc_num = disc_num;
+    return temp;
+}
 
 int state_value(Node *curr){
     
@@ -161,45 +212,6 @@ int state_value(Node *curr){
     return value;
 }
 
-std::vector<Point> get_valid_spots(State s, int curr_player) {
-    std::vector<Point> valid_spots;
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
-            if (s[i][j] != 0) continue;
-            Point p = Point(i, j);
-            if (is_spot_valid(s, p, curr_player)) valid_spots.push_back(p);
-        }
-    }
-    return valid_spots;
-}
-
-
-Node* make_node(State s, Point dir, int disc_num){
-    Node *temp = new Node[1];
-    temp->_s = s;
-    temp->pos = dir;
-    temp->value = state_value(temp);
-    temp->disc_num = disc_num;
-    return temp;
-}
-
-bool is_spot_valid(State s, Point center, int curr_player) {
-    if (s[center.x][center.y] != 0) return false;
-
-    for (Point dir: directions) {
-        // Move along the direction while testing.
-        Point p = center + dir;
-        if (!is_disc_at(s, p, 3 - curr_player)) continue;
-        p = p + dir;
-        while (is_spot_on_board(p) && s[p.x][p.y] != 0) {
-            if (is_disc_at(s, p, curr_player)) return true;
-            p = p + dir;
-        }
-    }
-    return false;
-}
-
-// Flip the board
 State flip_board(State parent, Point center, int curr_player) {
     State ss = parent;
     
@@ -225,7 +237,6 @@ State flip_board(State parent, Point center, int curr_player) {
     return ss;
 }
 
-// Alpha-Beta pruning
 int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer){
     
     if(curr->disc_num == SIZE * SIZE || depth == 0) return curr->value;
@@ -233,7 +244,6 @@ int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer
     // Find curr_childs
     if (maximizingPlayer) curr->valid_spots = get_valid_spots(curr->_s, player);
     else curr->valid_spots = get_valid_spots(curr->_s, 3 - player);
-
 
     if (maximizingPlayer){
         int value = INT32_MIN;
@@ -263,6 +273,7 @@ int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer
 
 }
 
+// Read the init board
 void read_board(std::ifstream& fin) {
     fin >> player;
     for (int i = 0; i < SIZE; i++) {
@@ -273,6 +284,7 @@ void read_board(std::ifstream& fin) {
     }
 }
 
+// Read valid spots of the init board
 void read_valid_spots(std::ifstream& fin) {
     int n_valid_spots;
     fin >> n_valid_spots;
@@ -283,6 +295,7 @@ void read_valid_spots(std::ifstream& fin) {
     }
 }
 
+// Output the best valid spot
 void write_valid_spot(std::ofstream& fout) {
 
     // int n_valid_spots = next_valid_spots.size();
@@ -293,7 +306,7 @@ void write_valid_spot(std::ofstream& fout) {
     // Point p = next_valid_spots[index];
 
     Node *root = make_node(board, Point(0, 0), disc_on_board);
-    alpha_beta(root, 10, INT32_MIN, INT32_MAX, true);
+    alpha_beta(root, 2, INT32_MIN, INT32_MAX, true);
     
     // Remember to flush the output to ensure the last action is written to file.
     fout << root->best_choice.x << " " << root->best_choice.y << std::endl;
