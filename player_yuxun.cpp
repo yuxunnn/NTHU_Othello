@@ -126,14 +126,14 @@ int state_value(Node *curr){
 
     // Board value only for 8x8
     int boardValue[SIZE][SIZE] = {
-        {100, -3, 11, 8,  8, 11, -3, 100},
+        {50, -3, 11, 8,  8, 11, -3, 50},
         {-3, -7, -4, 1,  1, -4, -7, -3},
-        {11, -4, 2,  2,  2,  2, -4, 11},
-        { 8,  1, 2, -3, -3,  2,  1,  8},
-        { 8,  1, 2, -3, -3,  2,  1,  8},
-        {11, -4, 2,  2,  2,  2, -4, 11},
+        {11, -4,  2, 2,  2,  2, -4, 11},
+        { 8,  1,  2, 0,  0,  2,  1,  8},
+        { 8,  1,  2, 0,  0,  2,  1,  8},
+        {11, -4,  2, 2,  2,  2, -4, 11},
         {-3, -7, -4, 1,  1, -4, -7, -3},
-        {100, -3, 11, 8,  8, 11, -3, 100}
+        {50, -3, 11, 8,  8, 11, -3, 50}
     };
 
     for (int i = 0; i < SIZE; i++){
@@ -240,7 +240,7 @@ State flip_board(State parent, Point center, int curr_player) {
 
 int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer){
     
-    if(curr->disc_num == SIZE * SIZE || depth == 0) return curr->value;
+    if(curr->disc_num >= SIZE * SIZE || depth == 0) return curr->value;
 
     // Find curr_childs
     if (maximizingPlayer) curr->valid_spots = get_valid_spots(curr->_s, player);
