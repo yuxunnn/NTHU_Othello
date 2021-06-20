@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <set>
+// 穩定子, 行動力
 
 struct Point {
     int x, y;
@@ -124,14 +125,14 @@ int state_value(Node *curr){
 
     // Board value only for 8x8
     int boardValue[SIZE][SIZE] = {
-        {100, -3, 11, 8,  8, 11, -3, 100},
+        {20, -3, 11, 8,  8, 11, -3, 20},
         {-3, -7, -4, 1,  1, -4, -7, -3},
         {11, -4,  2, 2,  2,  2, -4, 11},
         { 8,  1,  2, 0,  0,  2,  1,  8},
         { 8,  1,  2, 0,  0,  2,  1,  8},
         {11, -4,  2, 2,  2,  2, -4, 11},
         {-3, -7, -4, 1,  1, -4, -7, -3},
-        {100, -3, 11, 8,  8, 11, -3, 100}
+        {20, -3, 11, 8,  8, 11, -3, 20}
     };
 
     for (int i = 0; i < SIZE; i++){
@@ -141,73 +142,6 @@ int state_value(Node *curr){
             if (Board[i][j] == 0) curr->full = false;
         }
     }
-
-    // for (int i = 0; i < SIZE; i++){
-    //     for (int j = 0; j < SIZE; j++){
-    //         if (Board[i][j] == player) value += 1;
-    //         if (Board[i][j] == 3 - player) value -= 1;
-    //         if (Board[i][j] != 0) curr->disc_num++;
-    //     }
-    // }
-
-    // // Corner
-    // const int corner = 100000;
-    // // Upper left
-    // if (Board[0][0] == player) value += corner;
-    // if (Board[0][0] == 3 - player) value -= corner;
-    // // Upper right
-    // if (Board[0][SIZE-1] == player) value += corner;
-    // if (Board[0][SIZE-1] == 3 - player) value -= corner;
-    // // Lower left
-    // if (Board[SIZE-1][0] == player) value += corner;
-    // if (Board[SIZE-1][0] == 3 - player) value -= corner;
-    // // Lower right
-    // if (Board[SIZE-1][SIZE-1] == player) value += corner;
-    // if (Board[SIZE-1][SIZE-1] == 3 - player) value -= corner;
-
-    // // Position around corner
-    // const int aroundCorner = -30;
-    // // Upper left
-    // if (Board[0][1] == player) value += aroundCorner;
-    // if (Board[0][1] == 3 - player) value -= aroundCorner;
-    // if (Board[1][0] == player) value += aroundCorner;
-    // if (Board[1][0] == 3 - player) value -= aroundCorner;
-    // if (Board[1][1] == player) value += aroundCorner;
-    // if (Board[1][1] == 3 - player) value -= aroundCorner;
-    // // Upper right
-    // if (Board[0][SIZE-2] == player) value += aroundCorner;
-    // if (Board[0][SIZE-2] == 3 - player) value -= aroundCorner;
-    // if (Board[1][SIZE-1] == player) value += aroundCorner;
-    // if (Board[1][SIZE-1] == 3 - player) value -= aroundCorner;
-    // if (Board[1][SIZE-2] == player) value += aroundCorner;
-    // if (Board[1][SIZE-2] == 3 - player) value -= aroundCorner;
-    // // Lower left
-    // if (Board[SIZE-2][0] == player) value += aroundCorner;
-    // if (Board[SIZE-2][0] == 3 - player) value -= aroundCorner;
-    // if (Board[SIZE-1][1] == player) value += aroundCorner;
-    // if (Board[SIZE-1][1] == 3 - player) value -= aroundCorner;
-    // if (Board[SIZE-2][1] == player) value += aroundCorner;
-    // if (Board[SIZE-2][1] == 3 - player) value -= aroundCorner;
-    // // Lower right
-    // if (Board[SIZE-1][SIZE-2] == player) value += aroundCorner;
-    // if (Board[SIZE-1][SIZE-2] == 3 - player) value -= aroundCorner;
-    // if (Board[SIZE-2][SIZE-1] == player) value += aroundCorner;
-    // if (Board[SIZE-2][SIZE-1] == 3 - player) value -= aroundCorner;
-    // if (Board[SIZE-2][SIZE-2] == player) value += aroundCorner;
-    // if (Board[SIZE-2][SIZE-2] == 3 - player) value -= aroundCorner;
-
-    // // Edge
-    // const int edge = 10;
-    // for (int i = 2; i < SIZE - 2; i++){
-    //     if (Board[i][0] == player) value += edge;
-    //     if (Board[i][0] == 3 - player) value += edge;
-    //     if (Board[i][SIZE-1] == player) value += edge;
-    //     if (Board[i][SIZE-1] == 3 - player) value += edge;
-    //     if (Board[0][i] == player) value += edge;
-    //     if (Board[0][i] == 3 - player) value += edge;
-    //     if (Board[SIZE-1][i] == player) value += edge;
-    //     if (Board[SIZE-1][i] == 3 - player) value += edge;
-    // }
 
     return value;
 }
@@ -248,6 +182,8 @@ int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer
     // Find curr_childs
     if (maximizingPlayer) curr->valid_spots = get_valid_spots(curr->_s, player);
     else curr->valid_spots = get_valid_spots(curr->_s, 3 - player);
+
+    if (curr->valid_spots.empty()) return curr->value;
 
     if (maximizingPlayer){
         int value = INT32_MIN;
