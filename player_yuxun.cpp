@@ -30,12 +30,10 @@ struct Point {
 
 const int SIZE = 8;
 const int MaxDepth = 8;
-const int Start_parity = 8;
 using State = std::array<std::array<int, SIZE>, SIZE>;
 int player;
 std::vector<Point> next_valid_spots;
 State board;
-int init_disc_count = 0;
 
 const std::array<Point, 8> directions{
     Point(-1, -1), Point(-1, 0), Point(-1, 1),
@@ -51,11 +49,12 @@ std::array <Point, 4> near{
 struct Node{
     State _s;
     int value;
+    int player_disc_cnt;
+    int opponent_disc_cnt;
     Point pos;
     Point best_choice;
     std::set<Node*> child;
     std::vector<Point> valid_spots;
-    bool full;
 };
 
 // ========================================================================================
@@ -69,9 +68,9 @@ bool is_spot_valid(State s, Point center, int curr_player);
 // Get valid spots
 std::vector<Point> get_valid_spots(State s, int curr_player);
 // Make new node
-Node* make_node(State s, Point dir);
-// Count disc on an empty area 奇偶性
-int parity(Node *curr);
+Node* make_node(State s, Point dir, int cnt);
+// Count connected same disc 
+int connected_disc(Node *, int type);
 // Calculate the board value
 int state_value(Node *curr);
 // Flip the board to the next state
@@ -123,29 +122,35 @@ Node* make_node(State s, Point dir){
     Node *temp = new Node[1];
     temp->_s = s;
     temp->pos = dir;
-    temp->full = true;
+    temp->player_disc_cnt = 0;
+    temp->opponent_disc_cnt = 0;
+    temp->value = 0;
     temp->value = state_value(temp);
     return temp;
 }
 
-int parity(Node *curr){
+int connected_disc(Node *curr, int type){
 
     std::queue <std::pair<int, int>> Q;
     std::set <std::pair<int, int>> explored;
     Q.push(std::pair<int, int> {curr->pos.x, curr->pos.y});
 
+    // BFS
     int total = 1;
     while(!Q.empty()){
         auto qq = Q.front();
         Q.pop();
 
         for (int i = 0; i < SIZE; i++){
-            if (curr->_s[qq.first + near[i].x][qq.second + near[i].y] == 0){
-                std::pair<int, int> temp {qq.first + near[i].x, qq.second + near[i].y};
-                if (explored.find(temp) == explored.end()){
-                    total++;
-                    Q.push(temp);
-                    explored.insert(temp);
+            if (qq.first + near[i].x >= 0 && qq.first + near[i].x < SIZE && qq.second + near[i].y >=0 && qq.second + near[i].y < SIZE){
+                // Check the spot is empty
+                if (curr->_s[qq.first + near[i].x][qq.second + near[i].y] == type){
+                    std::pair<int, int> temp {qq.first + near[i].x, qq.second + near[i].y};
+                    if (explored.find(temp) == explored.end()){
+                        total++;
+                        Q.push(temp);
+                        explored.insert(temp);
+                    }
                 }
             }
         }
@@ -159,23 +164,24 @@ int state_value(Node *curr){
     State Board = curr->_s;
     int value = 0;
 
-    // Board value only for 8x8
     int boardValue[SIZE][SIZE] = {
-        {20, -3, 11, 8,  8, 11, -3, 20},
-        {-3, -7, -4, 1,  1, -4, -7, -3},
-        {11, -4,  2, 2,  2,  2, -4, 11},
-        { 8,  1,  2, 0,  0,  2,  1,  8},
-        { 8,  1,  2, 0,  0,  2,  1,  8},
-        {11, -4,  2, 2,  2,  2, -4, 11},
-        {-3, -7, -4, 1,  1, -4, -7, -3},
-        {20, -3, 11, 8,  8, 11, -3, 20}
+        {50, -7, 20, 12,  12, 20, -7, 50},
+        {-7, -15, -4, 1,  1, -4, -15, -7},
+        {20, -4,  2, 2,  2,  2, -4, 20},
+        { 12,  1,  2, 0,  0,  2,  1,  12},
+        { 12,  1,  2, 0,  0,  2,  1,  12},
+        {20, -4,  2, 2,  2,  2, -4, 20},
+        {-7, -15, -4, 1,  1, -4, -15, -7},
+        {50, -7, 20, 12,  12, 20, -7, 50}
     };
-
-    for (int i = 0; i < SIZE; i++){
-        for (int j = 0; j < SIZE; j++){
-            if (Board[i][j] == player) value += boardValue[i][j];
-            if (Board[i][j] == 3 - player) value -= boardValue[i][j];
-            if (Board[i][j] == 0) curr->full = false;
+    
+    for (int i = 0; i < SIZE; i++) for (int j = 0; j < SIZE; j++){
+        if (Board[i][j] == player){
+            value += boardValue[i][j];
+            curr->player_disc_cnt++;
+        }else if (Board[i][j] == 3 - player){
+            value -= boardValue[i][j];
+            curr->opponent_disc_cnt++;
         }
     }
 
@@ -212,38 +218,49 @@ State flip_board(State parent, Point center, int curr_player) {
 }
 
 int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer){
-    
-    if(curr->full || depth == 0) return curr->value;
+
+    // Last state of full board
+    if (curr->player_disc_cnt + curr->opponent_disc_cnt == SIZE * SIZE) return curr->player_disc_cnt - curr->opponent_disc_cnt;
+    // Already maxDepth
+    if (depth == 0) return curr->value;
 
     // Find curr_childs
     if (maximizingPlayer) curr->valid_spots = get_valid_spots(curr->_s, player);
     else curr->valid_spots = get_valid_spots(curr->_s, 3 - player);
-
-    // No next possible board
+    
+    // No next moves
     if (curr->valid_spots.empty()) return curr->value;
 
     // Alpha-Beat and parity
     if (maximizingPlayer){
         int value = INT32_MIN;
+        
         for (auto i : curr->valid_spots){
             Node *child = make_node(flip_board(curr->_s, i, player), i);
+                
             value = std::max(value, alpha_beta(child, depth - 1, alpha, beta, false));
 
-            curr->best_choice = child->pos;
-            
+            if (value > alpha) curr->best_choice = child->pos;
+                    
             alpha = std::max(alpha, value);
+            
+            // Prune
             if (alpha >= beta) break;
         }
         return value;
     }else { // minimizingPlayer
         int value = INT32_MAX;
+
         for (auto i : curr->valid_spots){
-            Node *child = make_node(flip_board(curr->_s, i, player), i);
+            Node *child = make_node(flip_board(curr->_s, i, 3 - player), i);
+
             value = std::min(value, alpha_beta(child, depth - 1, alpha, beta, true));
-    
-            curr->best_choice = child->pos;
+            
+            if (value < beta) curr->best_choice = child->pos;
             
             beta = std::min(beta, value);
+
+            // Prune
             if (beta <= alpha) break;
         }
         return value;
@@ -257,7 +274,6 @@ void read_board(std::ifstream& fin) {
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
             fin >> board[i][j];
-            if (board[i][j] != 0) init_disc_count++;
         }
     }
 }
@@ -284,6 +300,7 @@ void write_valid_spot(std::ofstream& fout) {
     // Point p = next_valid_spots[index];
 
     Node *root = make_node(board, Point(-1, -1));
+
     alpha_beta(root, MaxDepth, INT32_MIN, INT32_MAX, true);
     
     // Remember to flush the output to ensure the last action is written to file.
