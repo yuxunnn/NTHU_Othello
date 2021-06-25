@@ -70,7 +70,7 @@ std::vector<Point> get_valid_spots(State s, int curr_player);
 // Make new node
 Node* make_node(State s, Point dir, int cnt);
 // Count connected same disc 
-int connected_disc(Node *, int type);
+int connected_disc(Node *curr, int type);
 // Calculate the board value
 int state_value(Node *curr);
 // Flip the board to the next state
@@ -137,7 +137,7 @@ int connected_disc(Node *curr, int type){
     Q.push(std::pair<int, int> {curr->pos.x, curr->pos.y});
     explored.insert(std::pair<int, int> {curr->pos.x, curr->pos.y});
 
-    // BFS
+    // BFS search
     int total = 1;
     while(!Q.empty()){
         auto qq = Q.front();
