@@ -29,7 +29,7 @@ struct Point {
 // Variable declaration
 
 const int SIZE = 8;
-const int MaxDepth = 8;
+const int MaxDepth = 6;
 using State = std::array<std::array<int, SIZE>, SIZE>;
 int player;
 std::vector<Point> next_valid_spots;
@@ -125,6 +125,7 @@ Node* make_node(State s, Point dir){
     temp->player_disc_cnt = 0;
     temp->opponent_disc_cnt = 0;
     temp->value = 0;
+    temp->valid_spots.clear();
     temp->value = state_value(temp);
     return temp;
 }
@@ -134,6 +135,7 @@ int connected_disc(Node *curr, int type){
     std::queue <std::pair<int, int>> Q;
     std::set <std::pair<int, int>> explored;
     Q.push(std::pair<int, int> {curr->pos.x, curr->pos.y});
+    explored.insert(std::pair<int, int> {curr->pos.x, curr->pos.y});
 
     // BFS
     int total = 1;
@@ -165,14 +167,14 @@ int state_value(Node *curr){
     int value = 0;
 
     int boardValue[SIZE][SIZE] = {
-        {50, -7, 20, 12,  12, 20, -7, 50},
-        {-7, -15, -4, 1,  1, -4, -15, -7},
-        {20, -4,  2, 2,  2,  2, -4, 20},
-        { 12,  1,  2, 0,  0,  2,  1,  12},
-        { 12,  1,  2, 0,  0,  2,  1,  12},
-        {20, -4,  2, 2,  2,  2, -4, 20},
-        {-7, -15, -4, 1,  1, -4, -15, -7},
-        {50, -7, 20, 12,  12, 20, -7, 50}
+        {50,  -7, 20, 12,  12, 20,  -7, 50},
+        {-7, -15, -4,  1,   1, -4, -15, -7},
+        {20,  -4,  2,  2,   2,  2,  -4, 20},
+        {12,   1,  2,  0,   0,  2,   1, 12},
+        {12,   1,  2,  0,   0,  2,   1, 12},
+        {20,  -4,  2,  2,   2,  2,  -4, 20},
+        {-7, -15, -4,  1,   1, -4, -15, -7},
+        {50,  -7, 20, 12,  12, 20,  -7, 50}
     };
     
     for (int i = 0; i < SIZE; i++) for (int j = 0; j < SIZE; j++){
@@ -220,19 +222,20 @@ State flip_board(State parent, Point center, int curr_player) {
 int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer){
 
     // Last state of full board
-    if (curr->player_disc_cnt + curr->opponent_disc_cnt == SIZE * SIZE) return curr->player_disc_cnt - curr->opponent_disc_cnt;
+    if (curr->player_disc_cnt + curr->opponent_disc_cnt == SIZE * SIZE) return (curr->player_disc_cnt - curr->opponent_disc_cnt);
     // Already maxDepth
     if (depth == 0) return curr->value;
 
     // Find curr_childs
     if (maximizingPlayer) curr->valid_spots = get_valid_spots(curr->_s, player);
     else curr->valid_spots = get_valid_spots(curr->_s, 3 - player);
-    
-    // No next moves
-    if (curr->valid_spots.empty()) return curr->value;
 
-    // Alpha-Beat and parity
+    // Alpha-Beat pruning
     if (maximizingPlayer){
+
+        // Mobility become zero
+        if (curr->valid_spots.empty()) return INT32_MAX;
+
         int value = INT32_MIN;
         
         for (auto i : curr->valid_spots){
@@ -249,6 +252,10 @@ int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer
         }
         return value;
     }else { // minimizingPlayer
+
+        // Mobility become zero
+        if (curr->valid_spots.empty()) return INT32_MAX;
+
         int value = INT32_MAX;
 
         for (auto i : curr->valid_spots){
@@ -291,13 +298,6 @@ void read_valid_spots(std::ifstream& fin) {
 
 // Output the best valid spot
 void write_valid_spot(std::ofstream& fout) {
-
-    // int n_valid_spots = next_valid_spots.size();
-
-    // srand(time(NULL));
-    // // Choose random spot. (Not random uniform here)
-    // int index = (rand() % n_valid_spots);
-    // Point p = next_valid_spots[index];
 
     Node *root = make_node(board, Point(-1, -1));
 
