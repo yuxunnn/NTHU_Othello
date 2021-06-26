@@ -8,6 +8,9 @@
 #include <set>
 #include <utility>
 
+// Variable declaration
+// ========================================================================================
+
 struct Point {
     int x, y;
     Point() : Point(0, 0) {}
@@ -25,8 +28,6 @@ struct Point {
 		return Point(x - rhs.x, y - rhs.y);
 	};
 };
-
-// Variable declaration
 
 const int SIZE = 8;
 const int MaxDepth = 6;
@@ -57,6 +58,9 @@ struct Node{
     std::vector<Point> valid_spots;
 };
 
+// ========================================================================================
+
+// Fuction declaration
 // ========================================================================================
 
 // Check if spot on board
@@ -308,6 +312,7 @@ void write_valid_spot(std::ofstream& fout) {
     fout.flush();
 }
 
+// Main
 int main(int, char** argv) {
     std::ifstream fin(argv[1]);
     std::ofstream fout(argv[2]);
