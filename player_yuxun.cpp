@@ -35,8 +35,8 @@ State board;
 
 const std::array<Point, 8> directions{
     Point(-1, -1), Point(-1, 0), Point(-1, 1),
-    Point(0, -1), /*{0, 0}, */Point(0, 1),
-    Point(1, -1), Point(1, 0), Point(1, 1)
+    Point(0, -1),  /*{0, 0}, */  Point(0, 1),
+    Point(1, -1),  Point(1, 0),  Point(1, 1)
 };
 
 std::array <Point, 4> near{
@@ -51,7 +51,6 @@ struct Node{
     int opponent_disc_cnt;
     Point pos;
     Point best_choice;
-    std::set<Node*> child;
     std::vector<Point> valid_spots;
 };
 
