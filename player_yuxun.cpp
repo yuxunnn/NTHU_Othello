@@ -65,20 +65,28 @@ struct Node{
 
 // Check if spot on board
 bool is_spot_on_board(Point p);
+
 // Check if the position has the right disc
 bool is_disc_at(State s, Point p, int disc);
+
 // Check if we can put the next disc
 bool is_spot_valid(State s, Point center, int curr_player);
+
 // Get valid spots
 std::vector<Point> get_valid_spots(State s, int curr_player);
+
 // Make new node
 Node* make_node(State s, Point dir, int cnt);
+
 // Count connected same disc 
 int count_parity(Node *curr, int type);
+
 // Calculate the board value
 int state_value(Node *curr);
+
 // Flip the board to the next state
 State flip_board(State parent, Point center, int curr_player);
+
 // Alpha-Beta pruning
 int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer);
 
