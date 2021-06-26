@@ -152,9 +152,10 @@ int count_parity(Node *curr, int type){
 
         for (int i = 0; i < SIZE; i++){
             if (qq.first + near[i].x >= 0 && qq.first + near[i].x < SIZE && qq.second + near[i].y >=0 && qq.second + near[i].y < SIZE){
-                // Check the spot is empty
+                // Check the spot is same type
                 if (curr->_s[qq.first + near[i].x][qq.second + near[i].y] == type){
                     std::pair<int, int> temp {qq.first + near[i].x, qq.second + near[i].y};
+                    // Not explored
                     if (explored.find(temp) == explored.end()){
                         total++;
                         Q.push(temp);
@@ -198,8 +199,10 @@ int state_value(Node *curr){
 }
 
 State flip_board(State parent, Point center, int curr_player) {
+    
     State ss = parent;
     
+    // Change target disc first
     ss[center.x][center.y] = curr_player;
 
     for (Point dir: directions) {
@@ -211,6 +214,7 @@ State flip_board(State parent, Point center, int curr_player) {
         p = p + dir;
 
         while (is_spot_on_board(p) && ss[p.x][p.y] != 0) {
+            // Flip other disc
             if (is_disc_at(ss, p, curr_player)) {
                 for (Point d: discs) {
                     ss[d.x][d.y] = curr_player;
@@ -240,7 +244,7 @@ int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer
     // Alpha-Beat pruning
     if (maximizingPlayer){
 
-        // Mobility become zero
+        // Mobility become zero so do not choose this
         if (curr->valid_spots.empty()) return INT32_MAX;
 
         int value = INT32_MIN;
@@ -260,7 +264,7 @@ int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer
         return value;
     }else { // minimizingPlayer
 
-        // Mobility become zero
+        // Mobility become zero so choose this
         if (curr->valid_spots.empty()) return INT32_MAX;
 
         int value = INT32_MAX;
