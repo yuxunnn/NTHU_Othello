@@ -13,7 +13,7 @@
 
 struct Point {
     int x, y;
-    Point() : Point(0, 0) {}
+    Point() : Point(0, 0) {};
     Point(int x, int y) : x(x), y(y) {};
 	bool operator==(Point& rhs) {
 		return x == rhs.x && y == rhs.y;
