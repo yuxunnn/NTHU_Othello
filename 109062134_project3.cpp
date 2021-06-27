@@ -72,9 +72,6 @@ std::vector<Point> get_valid_spots(State s, int curr_player);
 // Make new node
 Node* make_node(State s, Point dir, int cnt);
 
-// Count connected same disc 
-int count_parity(Node *curr, int type);
-
 // Calculate the board value
 int state_value(Node *curr);
 
@@ -134,38 +131,6 @@ Node* make_node(State s, Point dir){
     temp->valid_spots.clear();
     temp->value = state_value(temp);
     return temp;
-}
-
-int count_parity(Node *curr, int type){
-
-    std::queue <std::pair<int, int>> Q;
-    std::set <std::pair<int, int>> explored;
-    Q.push(std::pair<int, int> {curr->pos.x, curr->pos.y});
-    explored.insert(std::pair<int, int> {curr->pos.x, curr->pos.y});
-
-    // BFS search
-    int total = 1;
-    while(!Q.empty()){
-        auto qq = Q.front();
-        Q.pop();
-
-        for (int i = 0; i < SIZE; i++){
-            if (qq.first + near[i].x >= 0 && qq.first + near[i].x < SIZE && qq.second + near[i].y >=0 && qq.second + near[i].y < SIZE){
-                // Check the spot is same type
-                if (curr->_s[qq.first + near[i].x][qq.second + near[i].y] == type){
-                    std::pair<int, int> temp {qq.first + near[i].x, qq.second + near[i].y};
-                    // Not explored
-                    if (explored.find(temp) == explored.end()){
-                        total++;
-                        Q.push(temp);
-                        explored.insert(temp);
-                    }
-                }
-            }
-        }
-    }
-
-    return total;
 }
 
 int state_value(Node *curr){
@@ -243,8 +208,8 @@ int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer
     // Alpha-Beat pruning
     if (maximizingPlayer){
 
-        // Mobility become zero so do not choose this
-        if (curr->valid_spots.empty()) return INT32_MAX;
+        // No valid spots
+        if (curr->valid_spots.empty()) return curr->value;
 
         int value = INT32_MIN;
         
@@ -263,8 +228,8 @@ int alpha_beta(Node *curr, int depth, int alpha, int beta, bool maximizingPlayer
         return value;
     }else { // minimizingPlayer
 
-        // Mobility become zero so choose this
-        if (curr->valid_spots.empty()) return INT32_MAX;
+        // No valid spots
+        if (curr->valid_spots.empty()) return curr->value;
 
         int value = INT32_MAX;
 
